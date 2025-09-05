@@ -1,0 +1,42 @@
+{
+  "name": "Website Schema Analyzer",
+  "description": "MCP tool for analyzing websites and providing schema markup recommendations",
+  "version": "1.0.0",
+  "mcpServer": {
+    "command": "node",
+    "args": ["dist/index.js"],
+    "cwd": "C:\\Users\\lukas\\Desktop\\Lee\\Schematron",
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "tools": [
+    {
+      "name": "analyze_website",
+      "description": "Analyze a website to determine its type and recommend appropriate schema markup",
+      "parameters": {
+        "url": {
+          "type": "string",
+          "description": "The URL of the website to analyze",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "get_schema_recommendations", 
+      "description": "Get detailed schema recommendations by analyzing a specific website URL",
+      "parameters": {
+        "url": {
+          "type": "string",
+          "description": "The URL of the website to analyze and get recommendations for",
+          "required": true
+        }
+      }
+    }
+  ],
+  "capabilities": {
+    "webScraping": true,
+    "schemaAnalysis": true,
+    "puppeteer": true
+  }
+}

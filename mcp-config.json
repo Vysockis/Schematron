@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "website-schema-analyzer": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "C:\\Users\\lukas\\Desktop\\Lee\\Schematron",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
