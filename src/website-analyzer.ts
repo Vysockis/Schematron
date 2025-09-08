@@ -17,7 +17,31 @@ export class WebsiteAnalyzer {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-default-apps',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-ipc-flooding-protection',
+        '--disable-hang-monitor',
+        '--disable-prompt-on-repost',
+        '--disable-sync',
+        '--disable-translate',
+        '--disable-logging',
+        '--disable-permissions-api',
+        '--disable-presentation-api',
+        '--disable-print-preview',
+        '--disable-speech-api',
+        '--hide-scrollbars',
+        '--mute-audio',
+        '--no-default-browser-check',
+        '--no-pings',
+        '--password-store=basic',
+        '--use-mock-keychain'
       ]
     });
   }
@@ -30,8 +54,11 @@ export class WebsiteAnalyzer {
     const page = await this.browser.newPage();
     
     try {
-      // Set user agent to avoid detection
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      // Set user agent to avoid detection (cross-platform)
+      const userAgent = process.platform === 'darwin' 
+        ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      await page.setUserAgent(userAgent);
       
       // Set viewport
       await page.setViewport({ width: 1920, height: 1080 });
@@ -561,8 +588,11 @@ Schema.org provides a shared vocabulary for structured data on the web. As of 20
     const page = await this.browser.newPage();
     
     try {
-      // Set user agent to avoid detection
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      // Set user agent to avoid detection (cross-platform)
+      const userAgent = process.platform === 'darwin' 
+        ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      await page.setUserAgent(userAgent);
       
       // Set viewport
       await page.setViewport({ width: 1920, height: 1080 });
@@ -630,8 +660,11 @@ Schema.org provides a shared vocabulary for structured data on the web. As of 20
     const page = await this.browser.newPage();
     
     try {
-      // Set user agent to avoid detection
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      // Set user agent to avoid detection (cross-platform)
+      const userAgent = process.platform === 'darwin' 
+        ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      await page.setUserAgent(userAgent);
       
       // Set viewport
       await page.setViewport({ width: 1920, height: 1080 });
@@ -678,7 +711,7 @@ Schema.org provides a shared vocabulary for structured data on the web. As of 20
       // Freeze for 20 seconds to ensure all content is loaded
       await new Promise(resolve => setTimeout(resolve, 20000));
 
-      // Create screenshots directory if it doesn't exist
+      // Create screenshots directory if it doesn't exist (cross-platform)
       const screenshotsDir = path.join(process.cwd(), 'screenshots');
       if (!fs.existsSync(screenshotsDir)) {
         fs.mkdirSync(screenshotsDir, { recursive: true });
