@@ -1,5 +1,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import * as cheerio from 'cheerio';
+import * as fs from 'fs';
+import * as path from 'path';
 import { WebsiteType, DetectedElements, TechnicalDetails, AnalysisResult, ScrapedData } from './types.js';
 
 export class WebsiteAnalyzer {
@@ -39,6 +41,42 @@ export class WebsiteAnalyzer {
         waitUntil: 'networkidle2',
         timeout: 30000 
       });
+
+      // Wait for all images to load
+      await page.evaluate(async () => {
+        const images = Array.from(document.querySelectorAll('img'));
+        await Promise.all(images.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.addEventListener('load', resolve);
+            img.addEventListener('error', resolve);
+            // Timeout after 5 seconds per image
+            setTimeout(resolve, 5000);
+          });
+        }));
+      });
+
+      // Scroll to trigger lazy loading
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          let totalHeight = 0;
+          const distance = 100;
+          const timer = setInterval(() => {
+            const scrollHeight = document.body.scrollHeight;
+            window.scrollBy(0, distance);
+            totalHeight += distance;
+
+            if(totalHeight >= scrollHeight){
+              clearInterval(timer);
+              window.scrollTo(0, 0);
+              resolve(undefined);
+            }
+          }, 100);
+        });
+      });
+
+      // Freeze for 20 seconds to ensure all content is loaded
+      await new Promise(resolve => setTimeout(resolve, 20000));
 
       // Get page content
       const html = await page.content();
@@ -513,6 +551,167 @@ Schema.org provides a shared vocabulary for structured data on the web. As of 20
 - Use @type to specify schema types
 - Include @context: "https://schema.org" in JSON-LD`
     };
+  }
+
+  async takeScreenshot(url: string): Promise<Buffer> {
+    if (!this.browser) {
+      throw new Error('Browser not initialized. Call initialize() first.');
+    }
+
+    const page = await this.browser.newPage();
+    
+    try {
+      // Set user agent to avoid detection
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Set viewport
+      await page.setViewport({ width: 1920, height: 1080 });
+      
+      // Navigate to the page
+      await page.goto(url, { 
+        waitUntil: 'networkidle2',
+        timeout: 30000 
+      });
+
+      // Wait for all images to load
+      await page.evaluate(async () => {
+        const images = Array.from(document.querySelectorAll('img'));
+        await Promise.all(images.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.addEventListener('load', resolve);
+            img.addEventListener('error', resolve);
+            // Timeout after 5 seconds per image
+            setTimeout(resolve, 5000);
+          });
+        }));
+      });
+
+      // Scroll to trigger lazy loading
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          let totalHeight = 0;
+          const distance = 100;
+          const timer = setInterval(() => {
+            const scrollHeight = document.body.scrollHeight;
+            window.scrollBy(0, distance);
+            totalHeight += distance;
+
+            if(totalHeight >= scrollHeight){
+              clearInterval(timer);
+              window.scrollTo(0, 0);
+              resolve(undefined);
+            }
+          }, 100);
+        });
+      });
+
+      // Freeze for 20 seconds to ensure all content is loaded
+      await new Promise(resolve => setTimeout(resolve, 20000));
+
+      // Take full page screenshot
+      const screenshot = await page.screenshot({ 
+        fullPage: true,
+        type: 'png'
+      });
+
+      return screenshot as Buffer;
+
+    } finally {
+      await page.close();
+    }
+  }
+
+  async takeScreenshotToFile(url: string, customFilename?: string): Promise<{ filePath: string; size: number }> {
+    if (!this.browser) {
+      throw new Error('Browser not initialized. Call initialize() first.');
+    }
+
+    const page = await this.browser.newPage();
+    
+    try {
+      // Set user agent to avoid detection
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Set viewport
+      await page.setViewport({ width: 1920, height: 1080 });
+      
+      // Navigate to the page
+      await page.goto(url, { 
+        waitUntil: 'networkidle2',
+        timeout: 30000 
+      });
+
+      // Wait for all images to load
+      await page.evaluate(async () => {
+        const images = Array.from(document.querySelectorAll('img'));
+        await Promise.all(images.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.addEventListener('load', resolve);
+            img.addEventListener('error', resolve);
+            // Timeout after 5 seconds per image
+            setTimeout(resolve, 5000);
+          });
+        }));
+      });
+
+      // Scroll to trigger lazy loading
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          let totalHeight = 0;
+          const distance = 100;
+          const timer = setInterval(() => {
+            const scrollHeight = document.body.scrollHeight;
+            window.scrollBy(0, distance);
+            totalHeight += distance;
+
+            if(totalHeight >= scrollHeight){
+              clearInterval(timer);
+              window.scrollTo(0, 0);
+              resolve(undefined);
+            }
+          }, 100);
+        });
+      });
+
+      // Freeze for 20 seconds to ensure all content is loaded
+      await new Promise(resolve => setTimeout(resolve, 20000));
+
+      // Create screenshots directory if it doesn't exist
+      const screenshotsDir = path.join(process.cwd(), 'screenshots');
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+
+      // Generate filename
+      let filename: string;
+      if (customFilename) {
+        filename = `${customFilename}.png`;
+      } else {
+        const urlHash = Buffer.from(url).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        filename = `screenshot_${urlHash}_${timestamp}.png`;
+      }
+      
+      const filePath = path.join(screenshotsDir, filename);
+
+      // Take full page screenshot and save to file
+      await page.screenshot({ 
+        fullPage: true,
+        type: 'png',
+        path: filePath
+      });
+
+      // Get file size
+      const stats = fs.statSync(filePath);
+      const size = stats.size;
+
+      return { filePath, size };
+
+    } finally {
+      await page.close();
+    }
   }
 
   async close(): Promise<void> {

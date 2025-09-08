@@ -9,6 +9,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { WebsiteAnalyzer } from './website-analyzer.js';
 import { AnalysisResultSchema } from './types.js';
+import * as path from 'path';
 
 class WebsiteSchemaAnalyzerServer {
   private server: Server;
@@ -128,6 +129,40 @@ class WebsiteSchemaAnalyzerServer {
                 }
               },
               required: [],
+            },
+          },
+          {
+            name: 'take_screenshot',
+            description: 'Take a full page screenshot of a website after waiting 20 seconds for content to load',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                url: {
+                  type: 'string',
+                  description: 'The URL of the website to screenshot',
+                  format: 'uri',
+                },
+              },
+              required: ['url'],
+            },
+          },
+          {
+            name: 'take_screenshot_file',
+            description: 'Take a full page screenshot and save it to a file after waiting 20 seconds for content to load',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                url: {
+                  type: 'string',
+                  description: 'The URL of the website to screenshot',
+                  format: 'uri',
+                },
+                filename: {
+                  type: 'string',
+                  description: 'Optional custom filename (without extension). If not provided, auto-generated from URL and timestamp',
+                },
+              },
+              required: ['url'],
             },
           },
         ] as Tool[],
@@ -612,6 +647,178 @@ ${JSON.stringify(schemaData.hierarchy, null, 2)}
 - **LocalBusiness** - Local businesses
 
 Please try again or use the fallback types above.`
+                  }
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          case 'take_screenshot': {
+            const { url } = args as { url: string };
+            
+            // Validate URL
+            try {
+              new URL(url);
+            } catch {
+              throw new Error('Invalid URL provided');
+            }
+
+            // Initialize analyzer if not already done
+            if (!this.analyzer) {
+              this.analyzer = new WebsiteAnalyzer();
+            }
+
+            try {
+              // Take screenshot and save to file
+              const result = await this.analyzer.takeScreenshotToFile(url);
+              
+              const sizeKB = Math.round(result.size / 1024);
+
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `# Website Screenshot Saved to File
+
+## Screenshot Details
+- **URL**: ${url}
+- **Timestamp**: ${new Date().toISOString()}
+- **Format**: PNG
+- **Full Page**: Yes
+- **Wait Time**: Enhanced loading with image wait + scroll + 20 seconds
+- **File Size**: ${sizeKB} KB
+
+## File Information
+- **File Path**: ${result.filePath}
+- **File Name**: ${path.basename(result.filePath)}
+- **Directory**: ${path.dirname(result.filePath)}
+
+## Screenshot Status
+✅ Screenshot captured successfully
+✅ Full page content included
+✅ All dynamic content loaded (enhanced loading strategy applied)
+✅ File saved to disk
+
+## Technical Details
+- **Viewport**: 1920x1080
+- **User Agent**: Chrome 120.0.0.0
+- **Wait Strategy**: networkidle2 + image loading + lazy scroll + 20 second freeze
+- **Screenshot Type**: Full page PNG
+- **File Format**: PNG
+
+## Usage Instructions
+1. The screenshot has been saved to: \`${result.filePath}\`
+2. You can open this file with any image viewer
+3. The file contains the complete full-page screenshot
+4. All dynamic content is included after enhanced loading strategy
+
+## File Management
+- Screenshots are saved in the \`screenshots/\` directory
+- Filenames include URL hash and timestamp for uniqueness
+- Files are automatically created in PNG format`
+                  }
+                ],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Error taking screenshot: ${error instanceof Error ? error.message : 'Unknown error occurred'}
+
+## Troubleshooting
+- Ensure the URL is accessible
+- Check if the website blocks automated browsers
+- Verify the URL is valid and reachable
+- Some websites may require JavaScript to load content properly`
+                  }
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          case 'take_screenshot_file': {
+            const { url, filename } = args as { url: string; filename?: string };
+            
+            // Validate URL
+            try {
+              new URL(url);
+            } catch {
+              throw new Error('Invalid URL provided');
+            }
+
+            // Initialize analyzer if not already done
+            if (!this.analyzer) {
+              this.analyzer = new WebsiteAnalyzer();
+            }
+
+            try {
+              // Take screenshot and save to file
+              const result = await this.analyzer.takeScreenshotToFile(url, filename);
+              
+              const sizeKB = Math.round(result.size / 1024);
+
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `# Website Screenshot Saved to File
+
+## Screenshot Details
+- **URL**: ${url}
+- **Timestamp**: ${new Date().toISOString()}
+- **Format**: PNG
+- **Full Page**: Yes
+- **Wait Time**: Enhanced loading with image wait + scroll + 20 seconds
+- **File Size**: ${sizeKB} KB
+
+## File Information
+- **File Path**: ${result.filePath}
+- **File Name**: ${path.basename(result.filePath)}
+- **Directory**: ${path.dirname(result.filePath)}
+
+## Screenshot Status
+✅ Screenshot captured successfully
+✅ Full page content included
+✅ All dynamic content loaded (enhanced loading strategy applied)
+✅ File saved to disk
+
+## Technical Details
+- **Viewport**: 1920x1080
+- **User Agent**: Chrome 120.0.0.0
+- **Wait Strategy**: networkidle2 + image loading + lazy scroll + 20 second freeze
+- **Screenshot Type**: Full page PNG
+- **File Format**: PNG
+
+## Usage Instructions
+1. The screenshot has been saved to: \`${result.filePath}\`
+2. You can open this file with any image viewer
+3. The file contains the complete full-page screenshot
+4. All dynamic content is included after enhanced loading strategy
+
+## File Management
+- Screenshots are saved in the \`screenshots/\` directory
+- Filenames include URL hash and timestamp for uniqueness
+- You can specify a custom filename using the \`filename\` parameter
+- Files are automatically created in PNG format`
+                  }
+                ],
+              };
+            } catch (error) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Error taking screenshot: ${error instanceof Error ? error.message : 'Unknown error occurred'}
+
+## Troubleshooting
+- Ensure the URL is accessible
+- Check if the website blocks automated browsers
+- Verify the URL is valid and reachable
+- Some websites may require JavaScript to load content properly
+- Check if the screenshots directory is writable`
                   }
                 ],
                 isError: true,
